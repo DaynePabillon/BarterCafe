@@ -1,12 +1,53 @@
 import React, { useState, useEffect } from 'react'
-import { Clock, CheckCircle, Package, Truck } from 'lucide-react'
+import { Clock, CheckCircle, Package, Truck, RefreshCw } from 'lucide-react'
 
 const Orders = () => {
   const [orders, setOrders] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const fetchOrders = async () => {
+    setLoading(true)
+    setError(null)
+    
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || 'null')
+      
+      if (user && user.id) {
+        // Fetch from backend for logged-in users
+        const response = await fetch(`http://localhost:3001/api/orders/user/${user.id}`)
+        const data = await response.json()
+        
+        if (response.ok) {
+          setOrders(data.orders)
+        } else {
+          // Fallback to localStorage
+          const savedOrders = JSON.parse(localStorage.getItem('orders') || '[]')
+          setOrders(savedOrders.reverse())
+        }
+      } else {
+        // Use localStorage for non-logged-in users
+        const savedOrders = JSON.parse(localStorage.getItem('orders') || '[]')
+        setOrders(savedOrders.reverse())
+      }
+    } catch (err) {
+      console.error('Error fetching orders:', err)
+      // Fallback to localStorage on error
+      const savedOrders = JSON.parse(localStorage.getItem('orders') || '[]')
+      setOrders(savedOrders.reverse())
+      setError('Could not connect to server. Showing cached orders.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const savedOrders = JSON.parse(localStorage.getItem('orders') || '[]')
-    setOrders(savedOrders.reverse()) // Show newest first
+    fetchOrders()
+    
+    // Auto-refresh every 5 seconds to get live status updates
+    const interval = setInterval(fetchOrders, 5000)
+    
+    return () => clearInterval(interval)
   }, [])
 
   const getStatusIcon = (status) => {
@@ -39,6 +80,20 @@ const Orders = () => {
     }
   }
 
+  if (loading && orders.length === 0) {
+    return (
+      <div className="page">
+        <div className="page-container">
+          <h1 className="page-title">My Orders</h1>
+          <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+            <RefreshCw size={64} color="#654321" style={{ marginBottom: '1rem', animation: 'spin 1s linear infinite' }} />
+            <p style={{ color: '#666', fontSize: '1.1rem' }}>Loading orders...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (orders.length === 0) {
     return (
       <div className="page">
@@ -58,7 +113,44 @@ const Orders = () => {
   return (
     <div className="page">
       <div className="page-container">
-        <h1 className="page-title">My Orders</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+          <h1 className="page-title" style={{ margin: 0 }}>My Orders</h1>
+          <button
+            onClick={fetchOrders}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.75rem 1.5rem',
+              background: '#654321',
+              color: 'white',
+              border: 'none',
+              borderRadius: '25px',
+              cursor: 'pointer',
+              fontWeight: '500',
+              transition: 'background 0.3s ease'
+            }}
+            onMouseOver={(e) => e.target.style.background = '#8B4513'}
+            onMouseOut={(e) => e.target.style.background = '#654321'}
+          >
+            <RefreshCw size={18} />
+            Refresh
+          </button>
+        </div>
+
+        {error && (
+          <div style={{
+            background: '#fef3c7',
+            border: '2px solid #f59e0b',
+            padding: '1rem',
+            borderRadius: '10px',
+            marginBottom: '2rem',
+            color: '#92400e',
+            textAlign: 'center'
+          }}>
+            {error}
+          </div>
+        )}
 
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           {orders.map((order) => (

@@ -31,6 +31,8 @@ const db = new sqlite3.Database(path.join(__dirname, 'database.sqlite'), (err) =
         username TEXT UNIQUE NOT NULL,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
+        loyalty_points INTEGER DEFAULT 0,
+        total_orders INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `, (err) => {
@@ -38,6 +40,30 @@ const db = new sqlite3.Database(path.join(__dirname, 'database.sqlite'), (err) =
         console.error('Error creating users table:', err);
       } else {
         console.log('Users table ready');
+      }
+    });
+
+    // Create orders table
+    db.run(`
+      CREATE TABLE IF NOT EXISTS orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        customer_name TEXT NOT NULL,
+        customer_email TEXT NOT NULL,
+        customer_phone TEXT NOT NULL,
+        items TEXT NOT NULL,
+        total REAL NOT NULL,
+        payment_method TEXT NOT NULL,
+        status TEXT DEFAULT 'Preparing',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `, (err) => {
+      if (err) {
+        console.error('Error creating orders table:', err);
+      } else {
+        console.log('Orders table ready');
       }
     });
   }
@@ -185,6 +211,222 @@ app.get('/api/profile', authenticateToken, (req, res) => {
     user: req.user
   });
 });
+
+// Get user loyalty points
+app.get('/api/loyalty/:userId', (req, res) => {
+  const { userId } = req.params;
+
+  db.get(
+    'SELECT loyalty_points, total_orders FROM users WHERE id = ?',
+    [userId],
+    (err, user) => {
+      if (err) {
+        console.error('Error fetching loyalty points:', err);
+        return res.status(500).json({ error: 'Failed to fetch loyalty points' });
+      }
+
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      res.json({
+        loyaltyPoints: user.loyalty_points,
+        totalOrders: user.total_orders
+      });
+    }
+  );
+});
+
+// ============ ORDER MANAGEMENT ENDPOINTS ============
+
+// Create new order
+app.post('/api/orders', async (req, res) => {
+  try {
+    const { customer, items, total, paymentMethod, userId } = req.body;
+
+    // Validate input
+    if (!customer || !items || !total || !paymentMethod) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Insert order into database
+    db.run(
+      `INSERT INTO orders (user_id, customer_name, customer_email, customer_phone, items, total, payment_method, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        userId || null,
+        customer.name,
+        customer.email,
+        customer.phone,
+        JSON.stringify(items),
+        total,
+        paymentMethod,
+        'Preparing'
+      ],
+      function(err) {
+        if (err) {
+          console.error('Error creating order:', err);
+          return res.status(500).json({ error: 'Failed to create order' });
+        }
+
+        // Simulate order status progression
+        const orderId = this.lastID;
+        simulateOrderProgress(orderId);
+
+        // Award loyalty points if user is logged in
+        if (userId) {
+          const pointsEarned = Math.floor(total); // 1 point per dollar spent
+          db.run(
+            'UPDATE users SET loyalty_points = loyalty_points + ?, total_orders = total_orders + 1 WHERE id = ?',
+            [pointsEarned, userId],
+            (err) => {
+              if (err) {
+                console.error('Error updating loyalty points:', err);
+              } else {
+                console.log(`User #${userId} earned ${pointsEarned} loyalty points!`);
+              }
+            }
+          );
+        }
+
+        res.status(201).json({
+          message: 'Order created successfully',
+          orderId: orderId,
+          status: 'Preparing',
+          pointsEarned: userId ? Math.floor(total) : 0
+        });
+      }
+    );
+  } catch (error) {
+    console.error('Order creation error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get all orders for a user
+app.get('/api/orders/user/:userId', (req, res) => {
+  const { userId } = req.params;
+
+  db.all(
+    'SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC',
+    [userId],
+    (err, orders) => {
+      if (err) {
+        console.error('Error fetching orders:', err);
+        return res.status(500).json({ error: 'Failed to fetch orders' });
+      }
+
+      // Parse items JSON for each order
+      const parsedOrders = orders.map(order => ({
+        ...order,
+        items: JSON.parse(order.items)
+      }));
+
+      res.json({ orders: parsedOrders });
+    }
+  );
+});
+
+// Get all orders (for admin)
+app.get('/api/orders', (req, res) => {
+  db.all(
+    'SELECT * FROM orders ORDER BY created_at DESC',
+    [],
+    (err, orders) => {
+      if (err) {
+        console.error('Error fetching orders:', err);
+        return res.status(500).json({ error: 'Failed to fetch orders' });
+      }
+
+      const parsedOrders = orders.map(order => ({
+        ...order,
+        items: JSON.parse(order.items)
+      }));
+
+      res.json({ orders: parsedOrders });
+    }
+  );
+});
+
+// Get single order by ID
+app.get('/api/orders/:orderId', (req, res) => {
+  const { orderId } = req.params;
+
+  db.get(
+    'SELECT * FROM orders WHERE id = ?',
+    [orderId],
+    (err, order) => {
+      if (err) {
+        console.error('Error fetching order:', err);
+        return res.status(500).json({ error: 'Failed to fetch order' });
+      }
+
+      if (!order) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
+
+      res.json({
+        ...order,
+        items: JSON.parse(order.items)
+      });
+    }
+  );
+});
+
+// Update order status
+app.patch('/api/orders/:orderId/status', (req, res) => {
+  const { orderId } = req.params;
+  const { status } = req.body;
+
+  const validStatuses = ['Preparing', 'Brewing', 'Ready', 'Completed'];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ error: 'Invalid status' });
+  }
+
+  db.run(
+    'UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+    [status, orderId],
+    function(err) {
+      if (err) {
+        console.error('Error updating order status:', err);
+        return res.status(500).json({ error: 'Failed to update order status' });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
+
+      res.json({ message: 'Order status updated', status });
+    }
+  );
+});
+
+// Simulate order status progression
+function simulateOrderProgress(orderId) {
+  const statuses = ['Preparing', 'Brewing', 'Ready', 'Completed'];
+  let currentIndex = 0;
+
+  const interval = setInterval(() => {
+    currentIndex++;
+    if (currentIndex >= statuses.length) {
+      clearInterval(interval);
+      return;
+    }
+
+    const newStatus = statuses[currentIndex];
+    db.run(
+      'UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [newStatus, orderId],
+      (err) => {
+        if (err) {
+          console.error('Error updating order status:', err);
+        } else {
+          console.log(`Order #${orderId} status updated to: ${newStatus}`);
+        }
+      }
+    );
+  }, 30000); // Update every 30 seconds (Preparing -> Brewing -> Ready -> Completed)
+}
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

@@ -10,18 +10,32 @@ A modern, full-stack coffee shop website built with React, Vite, Express, and SQ
 - Password hashing with bcrypt
 - Persistent sessions with localStorage
 
+✅ **E-Commerce Features**
+- **Shopping Cart**: Add items, edit quantities, remove items
+- **Cart Drawer**: Slide-in cart with real-time totals
+- **Drink Customization**: Size, temperature, milk type, sweetness, extra shots
+- **Dynamic Pricing**: Prices update based on customizations
+- **Checkout System**: Multiple payment methods (Card, Wallet, Cash)
+- **Order History**: View all past orders with details
+- **Order Status Tracking**: Real-time status (Preparing → Brewing → Ready → Completed)
+
 ✅ **Beautiful UI**
 - Coffee-themed design matching Figma specifications
 - Lucide React icons throughout
 - Responsive layout for all devices
 - Improved text readability with high contrast
+- Smooth animations and transitions
+- Toast notifications
+- Loading states and empty states
 
 ✅ **Pages**
 - **Home**: Welcome page with personalized greeting when logged in
-- **Menu**: Coffee products with descriptions and pricing
+- **Menu**: Coffee products with customization options
 - **About**: Company story and mission
 - **Contact**: Contact form and business information
 - **Directions**: Location and travel instructions
+- **Checkout**: Complete checkout flow with payment
+- **Orders**: Order history with status tracking
 
 ✅ **Backend API**
 - Express.js server

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { ShoppingCart } from 'lucide-react'
+import { ShoppingCart, Award } from 'lucide-react'
 import { useCart } from '../context/CartContext'
 
 const Navigation = ({ onAuthClick }) => {
   const location = useLocation()
   const [user, setUser] = useState(null)
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0)
   const { toggleCart, getCartCount } = useCart()
 
   useEffect(() => {
@@ -14,8 +15,21 @@ const Navigation = ({ onAuthClick }) => {
     const userData = localStorage.getItem('user')
     if (token && userData) {
       setUser(JSON.parse(userData))
+      fetchLoyaltyPoints(JSON.parse(userData).id)
     }
   }, [])
+
+  const fetchLoyaltyPoints = async (userId) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/loyalty/${userId}`)
+      const data = await response.json()
+      if (response.ok) {
+        setLoyaltyPoints(data.loyaltyPoints)
+      }
+    } catch (error) {
+      console.error('Error fetching loyalty points:', error)
+    }
+  }
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -131,6 +145,20 @@ const Navigation = ({ onAuthClick }) => {
           
           {user ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.5rem 1rem',
+                background: 'rgba(245, 222, 179, 0.2)',
+                borderRadius: '20px',
+                border: '2px solid #f59e0b'
+              }}>
+                <Award size={18} color="#f59e0b" />
+                <span style={{ color: '#F5DEB3', fontWeight: 'bold' }}>
+                  {loyaltyPoints} pts
+                </span>
+              </div>
               <span style={{ color: '#F5DEB3' }}>
                 Welcome, {user.username}!
               </span>

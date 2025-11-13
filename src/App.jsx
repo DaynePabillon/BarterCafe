@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { CartProvider } from './context/CartContext'
 import Navigation from './components/Navigation'
@@ -11,11 +11,21 @@ import Directions from './pages/Directions'
 import Checkout from './pages/Checkout'
 import Orders from './pages/Orders'
 import AuthModal from './components/AuthModal'
+import { requestNotificationPermission } from './utils/notifications'
 import './App.css'
 
 function App() {
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authMode, setAuthMode] = useState('login') // 'login' or 'signup'
+
+  // Request notification permission on app load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      requestNotificationPermission()
+    }, 2000) // Wait 2 seconds before asking
+
+    return () => clearTimeout(timer)
+  }, [])
 
   const openAuthModal = (mode) => {
     setAuthMode(mode)

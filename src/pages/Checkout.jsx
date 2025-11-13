@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { CreditCard, Wallet, DollarSign, ArrowLeft } from 'lucide-react'
+import { notifyOrderStatus, notifyPointsEarned } from '../utils/notifications'
 
 const Checkout = () => {
   const navigate = useNavigate()
@@ -31,35 +32,76 @@ const Checkout = () => {
     e.preventDefault()
     setProcessing(true)
 
-    // Simulate payment processing
-    setTimeout(() => {
-      setProcessing(false)
-      setOrderPlaced(true)
+    try {
+      // Get user ID if logged in
+      const user = JSON.parse(localStorage.getItem('user') || 'null')
       
-      // Save order to localStorage
-      const order = {
-        id: Date.now(),
-        items: cartItems,
-        total: getCartTotal(),
-        date: new Date().toISOString(),
-        status: 'Preparing',
-        customer: {
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone
+      // Send order to backend API
+      const response = await fetch('http://localhost:3001/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customer: {
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone
+          },
+          items: cartItems,
+          total: getCartTotal(),
+          paymentMethod: paymentMethod,
+          userId: user?.id || null
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setProcessing(false)
+        setOrderPlaced(true)
+        
+        // Send notifications
+        notifyOrderStatus('Preparing', data.orderId)
+        
+        // Show points earned if user is logged in
+        if (data.pointsEarned > 0) {
+          notifyPointsEarned(data.pointsEarned)
+          alert(`🎉 You earned ${data.pointsEarned} loyalty points!`)
         }
+        
+        // Also save to localStorage for offline access
+        const order = {
+          id: data.orderId,
+          items: cartItems,
+          total: getCartTotal(),
+          date: new Date().toISOString(),
+          status: 'Preparing',
+          customer: {
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone
+          }
+        }
+        
+        const orders = JSON.parse(localStorage.getItem('orders') || '[]')
+        orders.push(order)
+        localStorage.setItem('orders', JSON.stringify(orders))
+        
+        clearCart()
+        
+        setTimeout(() => {
+          navigate('/orders')
+        }, 2000)
+      } else {
+        setProcessing(false)
+        alert('Error placing order: ' + data.error)
       }
-      
-      const orders = JSON.parse(localStorage.getItem('orders') || '[]')
-      orders.push(order)
-      localStorage.setItem('orders', JSON.stringify(orders))
-      
-      clearCart()
-      
-      setTimeout(() => {
-        navigate('/orders')
-      }, 2000)
-    }, 2000)
+    } catch (error) {
+      console.error('Order error:', error)
+      setProcessing(false)
+      alert('Network error. Please make sure the server is running.')
+    }
   }
 
   if (cartItems.length === 0 && !orderPlaced) {

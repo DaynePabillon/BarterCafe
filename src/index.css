@@ -1,0 +1,26 @@
+/* Global Styles */
+:root {
+  --coffee-dark: #654321;
+  --coffee-medium: #8B4513;
+  --coffee-light: #A0522D;
+  --cream: #F5DEB3;
+  --background: #D2B48C;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: var(--coffee-dark);
+  background: var(--background);
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+}

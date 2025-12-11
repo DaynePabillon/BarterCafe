@@ -130,7 +130,7 @@ POST /api/orders
 1. Order is saved to SQLite database
 2. Order status starts as "Preparing"
 3. Automatic status progression begins:
-   - After 30 seconds → "Brewing"
+   - After  seconds → "Brewing"
    - After 60 seconds → "Ready"
    - After 90 seconds → "Completed"
 

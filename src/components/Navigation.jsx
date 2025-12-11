@@ -92,6 +92,21 @@ const Navigation = ({ onAuthClick }) => {
               </Link>
             </li>
           )}
+          <li>
+            <Link 
+              to="/barista" 
+              className={location.pathname === '/barista' ? 'active' : ''}
+              style={{
+                background: '#8B4513',
+                color: 'white',
+                padding: '0.5rem 1rem',
+                borderRadius: '20px',
+                fontWeight: 'bold'
+              }}
+            >
+              ☕ Barista
+            </Link>
+          </li>
         </ul>
         
         <div className="auth-buttons">

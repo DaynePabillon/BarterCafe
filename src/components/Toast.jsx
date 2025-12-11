@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react'
+import PropTypes from 'prop-types'
 import { CheckCircle, XCircle, Info, AlertCircle } from 'lucide-react'
 
-const Toast = ({ message, type = 'success', onClose, duration = 3000 }) => {
+const Toast = ({ message, type, onClose, duration }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose()
@@ -77,6 +78,18 @@ const Toast = ({ message, type = 'success', onClose, duration = 3000 }) => {
       `}</style>
     </div>
   )
+}
+
+Toast.propTypes = {
+  message: PropTypes.string.isRequired,
+  type: PropTypes.oneOf(['success', 'error', 'info', 'warning']),
+  onClose: PropTypes.func.isRequired,
+  duration: PropTypes.number
+}
+
+Toast.defaultProps = {
+  type: 'success',
+  duration: 3000
 }
 
 export default Toast

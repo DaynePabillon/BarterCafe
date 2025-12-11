@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import PropTypes from 'prop-types'
 import { X, Star, Upload, User } from 'lucide-react'
 
 const ReviewsModal = ({ drink, onClose, onSubmitReview }) => {
@@ -166,6 +167,15 @@ const ReviewsModal = ({ drink, onClose, onSubmitReview }) => {
       </div>
     </div>
   )
+}
+
+ReviewsModal.propTypes = {
+  drink: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    name: PropTypes.string.isRequired
+  }).isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSubmitReview: PropTypes.func.isRequired
 }
 
 export default ReviewsModal

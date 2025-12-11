@@ -40,6 +40,37 @@ const db = new sqlite3.Database(path.join(__dirname, 'database.sqlite'), (err) =
         console.error('Error creating users table:', err);
       } else {
         console.log('Users table ready');
+        
+        // Migrate existing users table to add loyalty_points and total_orders columns
+        db.all("PRAGMA table_info(users)", [], (err, columns) => {
+          if (err) {
+            console.error('Error checking table structure:', err);
+            return;
+          }
+          
+          const hasLoyaltyPoints = columns.some(col => col.name === 'loyalty_points');
+          const hasTotalOrders = columns.some(col => col.name === 'total_orders');
+          
+          if (!hasLoyaltyPoints) {
+            db.run('ALTER TABLE users ADD COLUMN loyalty_points INTEGER DEFAULT 0', (err) => {
+              if (err) {
+                console.error('Error adding loyalty_points column:', err);
+              } else {
+                console.log('✅ Added loyalty_points column to users table');
+              }
+            });
+          }
+          
+          if (!hasTotalOrders) {
+            db.run('ALTER TABLE users ADD COLUMN total_orders INTEGER DEFAULT 0', (err) => {
+              if (err) {
+                console.error('Error adding total_orders column:', err);
+              } else {
+                console.log('✅ Added total_orders column to users table');
+              }
+            });
+          }
+        });
       }
     });
 
@@ -64,6 +95,29 @@ const db = new sqlite3.Database(path.join(__dirname, 'database.sqlite'), (err) =
         console.error('Error creating orders table:', err);
       } else {
         console.log('Orders table ready');
+      }
+    });
+
+    // Create custom recipes table
+    db.run(`
+      CREATE TABLE IF NOT EXISTS custom_recipes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        base_drink TEXT NOT NULL,
+        ingredients TEXT NOT NULL,
+        instructions TEXT,
+        price REAL NOT NULL,
+        category TEXT DEFAULT 'Coffee',
+        created_by TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `, (err) => {
+      if (err) {
+        console.error('Error creating custom_recipes table:', err);
+      } else {
+        console.log('Custom recipes table ready');
       }
     });
   }
@@ -269,9 +323,9 @@ app.post('/api/orders', async (req, res) => {
           return res.status(500).json({ error: 'Failed to create order' });
         }
 
-        // Simulate order status progression
+        // Order created - barista will manually process it
         const orderId = this.lastID;
-        simulateOrderProgress(orderId);
+        // simulateOrderProgress(orderId); // Disabled - using manual barista processing
 
         // Award loyalty points if user is logged in
         if (userId) {
@@ -327,10 +381,18 @@ app.get('/api/orders/user/:userId', (req, res) => {
   );
 });
 
-// Get all orders (for admin)
-app.get('/api/orders', (req, res) => {
+// Get all orders for barista dashboard (sorted by status priority) - MUST BE BEFORE :orderId route
+app.get('/api/orders/all', (req, res) => {
   db.all(
-    'SELECT * FROM orders ORDER BY created_at DESC',
+    `SELECT * FROM orders 
+     ORDER BY 
+       CASE status
+         WHEN 'Preparing' THEN 1
+         WHEN 'Brewing' THEN 2
+         WHEN 'Ready' THEN 3
+         WHEN 'Completed' THEN 4
+       END,
+       created_at DESC`,
     [],
     (err, orders) => {
       if (err) {
@@ -338,12 +400,7 @@ app.get('/api/orders', (req, res) => {
         return res.status(500).json({ error: 'Failed to fetch orders' });
       }
 
-      const parsedOrders = orders.map(order => ({
-        ...order,
-        items: JSON.parse(order.items)
-      }));
-
-      res.json({ orders: parsedOrders });
+      res.json({ orders });
     }
   );
 });
@@ -427,6 +484,68 @@ function simulateOrderProgress(orderId) {
     );
   }, 30000); // Update every 30 seconds (Preparing -> Brewing -> Ready -> Completed)
 }
+
+// ============ CUSTOM RECIPES ENDPOINTS ============
+
+// Get all custom recipes
+app.get('/api/recipes', (req, res) => {
+  db.all(
+    'SELECT * FROM custom_recipes WHERE is_active = 1 ORDER BY created_at DESC',
+    [],
+    (err, recipes) => {
+      if (err) {
+        console.error('Error fetching recipes:', err);
+        return res.status(500).json({ error: 'Failed to fetch recipes' });
+      }
+
+      res.json({ recipes });
+    }
+  );
+});
+
+// Create new custom recipe
+app.post('/api/recipes', (req, res) => {
+  const { name, description, baseDrink, ingredients, instructions, price, category, createdBy } = req.body;
+
+  if (!name || !baseDrink || !ingredients || !price) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  db.run(
+    `INSERT INTO custom_recipes (name, description, base_drink, ingredients, instructions, price, category, created_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [name, description, baseDrink, JSON.stringify(ingredients), instructions, price, category, createdBy],
+    function(err) {
+      if (err) {
+        console.error('Error creating recipe:', err);
+        return res.status(500).json({ error: 'Failed to create recipe' });
+      }
+
+      res.status(201).json({
+        message: 'Recipe created successfully',
+        recipeId: this.lastID
+      });
+    }
+  );
+});
+
+// Delete custom recipe (soft delete)
+app.delete('/api/recipes/:recipeId', (req, res) => {
+  const { recipeId } = req.params;
+
+  db.run(
+    'UPDATE custom_recipes SET is_active = 0 WHERE id = ?',
+    [recipeId],
+    (err) => {
+      if (err) {
+        console.error('Error deleting recipe:', err);
+        return res.status(500).json({ error: 'Failed to delete recipe' });
+      }
+
+      res.json({ message: 'Recipe deleted successfully' });
+    }
+  );
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

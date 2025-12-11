@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import PropTypes from 'prop-types'
 import { X, Plus, Minus } from 'lucide-react'
 
 const CustomizeDrinkModal = ({ drink, onClose, onAddToCart }) => {
@@ -257,6 +258,18 @@ const CustomizeDrinkModal = ({ drink, onClose, onAddToCart }) => {
       </div>
     </div>
   )
+}
+
+CustomizeDrinkModal.propTypes = {
+  drink: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    name: PropTypes.string.isRequired,
+    price: PropTypes.string.isRequired,
+    emoji: PropTypes.string,
+    description: PropTypes.string
+  }).isRequired,
+  onClose: PropTypes.func.isRequired,
+  onAddToCart: PropTypes.func.isRequired
 }
 
 export default CustomizeDrinkModal

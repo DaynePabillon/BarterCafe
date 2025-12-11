@@ -10,6 +10,7 @@ import Contact from './pages/Contact'
 import Directions from './pages/Directions'
 import Checkout from './pages/Checkout'
 import Orders from './pages/Orders'
+import BaristaDashboard from './pages/BaristaDashboard'
 import AuthModal from './components/AuthModal'
 import { requestNotificationPermission } from './utils/notifications'
 import './App.css'
@@ -51,6 +52,7 @@ function App() {
               <Route path="/directions" element={<Directions />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/orders" element={<Orders />} />
+              <Route path="/barista" element={<BaristaDashboard />} />
             </Routes>
           </main>
           

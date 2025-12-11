@@ -16,14 +16,36 @@ const Menu = () => {
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [selectedTemp, setSelectedTemp] = useState('All')
   const [sortBy, setSortBy] = useState('name')
-  const [priceRange, setPriceRange] = useState([0, 10])
+  const [priceRange, setPriceRange] = useState([0, 20])
   const [reviews, setReviews] = useState([])
+  const [customRecipes, setCustomRecipes] = useState([])
   const { addToCart } = useCart()
 
   // Load reviews from localStorage
   useEffect(() => {
     const savedReviews = JSON.parse(localStorage.getItem('reviews') || '[]')
     setReviews(savedReviews)
+  }, [])
+
+  // Fetch custom recipes from backend
+  useEffect(() => {
+    const fetchCustomRecipes = async () => {
+      try {
+        console.log('Fetching custom recipes from backend...')
+        const response = await fetch('http://localhost:3001/api/recipes')
+        console.log('Response status:', response.status)
+        if (response.ok) {
+          const data = await response.json()
+          console.log('Custom recipes received:', data.recipes)
+          setCustomRecipes(data.recipes)
+        } else {
+          console.error('Failed to fetch recipes, status:', response.status)
+        }
+      } catch (error) {
+        console.error('Error fetching custom recipes:', error)
+      }
+    }
+    fetchCustomRecipes()
   }, [])
 
   const menuItems = [
@@ -605,9 +627,43 @@ const Menu = () => {
     return reviews.filter(r => r.drinkId === drinkId).length
   }
 
+  // Convert custom recipes to menu item format
+  const customMenuItems = useMemo(() => {
+    const items = customRecipes.map(recipe => {
+      const ingredients = JSON.parse(recipe.ingredients)
+      return {
+        id: `custom-${recipe.id}`,
+        name: recipe.name,
+        description: recipe.description || `${recipe.base_drink} with ${ingredients.slice(0, 3).join(', ')}`,
+        price: `$${parseFloat(recipe.price).toFixed(2)}`,
+        emoji: '✨',
+        category: 'Custom',
+        temperature: 'Hot',
+        rating: 5.0,
+        reviews: 0,
+        bestSeller: false,
+        featured: true,
+        isCustom: true,
+        baseDrink: recipe.base_drink,
+        ingredients: ingredients,
+        instructions: recipe.instructions
+      }
+    })
+    console.log('Custom menu items created:', items.length, items)
+    return items
+  }, [customRecipes])
+
+  // Combine regular menu items with custom recipes
+  const allMenuItems = useMemo(() => {
+    const combined = [...menuItems, ...customMenuItems]
+    console.log('All menu items combined:', combined.length, 'Regular:', menuItems.length, 'Custom:', customMenuItems.length)
+    return combined
+  }, [menuItems, customMenuItems])
+
   // Filter and sort logic
   const filteredAndSortedItems = useMemo(() => {
-    let filtered = menuItems
+    console.log('Filtering items. Total items:', allMenuItems.length, 'Category filter:', selectedCategory)
+    let filtered = allMenuItems
 
     // Search filter
     if (searchQuery) {
@@ -619,7 +675,13 @@ const Menu = () => {
 
     // Category filter
     if (selectedCategory !== 'All') {
-      filtered = filtered.filter(item => item.category === selectedCategory)
+      console.log('Filtering by category:', selectedCategory)
+      const beforeFilter = filtered.length
+      filtered = filtered.filter(item => {
+        console.log('Item:', item.name, 'Category:', item.category, 'Match:', item.category === selectedCategory)
+        return item.category === selectedCategory
+      })
+      console.log('After category filter:', filtered.length, 'items (was', beforeFilter, ')')
     }
 
     // Temperature filter
@@ -651,7 +713,7 @@ const Menu = () => {
     })
 
     return sorted
-  }, [menuItems, searchQuery, selectedCategory, selectedTemp, priceRange, sortBy])
+  }, [allMenuItems, searchQuery, selectedCategory, selectedTemp, priceRange, sortBy])
 
   return (
     <div className="page">
@@ -714,6 +776,7 @@ const Menu = () => {
                 <option value="Coffee">Coffee</option>
                 <option value="Tea">Tea</option>
                 <option value="Chocolate">Chocolate</option>
+                <option value="Custom">✨ Custom Recipes</option>
               </select>
             </div>
 
@@ -805,6 +868,21 @@ const Menu = () => {
                     Seasonal
                   </span>
                 )}
+                {item.isCustom && (
+                  <span style={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    padding: '0.25rem 0.75rem',
+                    borderRadius: '15px',
+                    fontSize: '0.75rem',
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem'
+                  }}>
+                    ✨ Custom Recipe
+                  </span>
+                )}
               </div>
 
               <div className="menu-item-image">
@@ -825,6 +903,34 @@ const Menu = () => {
                 </div>
 
                 <p>{item.description}</p>
+                
+                {/* Show ingredients for custom recipes */}
+                {item.isCustom && item.ingredients && (
+                  <div style={{ 
+                    marginTop: '0.75rem', 
+                    padding: '0.75rem', 
+                    background: 'rgba(102, 126, 234, 0.1)',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(102, 126, 234, 0.3)'
+                  }}>
+                    <p style={{ 
+                      color: '#667eea', 
+                      fontSize: '0.85rem', 
+                      fontWeight: 'bold',
+                      marginBottom: '0.5rem'
+                    }}>
+                      Ingredients:
+                    </p>
+                    <p style={{ 
+                      color: '#F5DEB3', 
+                      fontSize: '0.85rem',
+                      lineHeight: '1.4'
+                    }}>
+                      {item.ingredients.join(', ')}
+                    </p>
+                  </div>
+                )}
+                
                 <div className="menu-item-price">{item.price}</div>
                 
                 {/* Action Buttons */}

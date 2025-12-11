@@ -40,77 +40,204 @@ A modern, full-stack coffee shop website built with React, Vite, Express, and SQ
 ✅ **Backend API**
 - Express.js server
 - SQLite database for user management
-- RESTful API endpoints
-- CORS enabled for frontend communication
 
-## Tech Stack
+### 🔔 **Push Notifications**
+- **Order Updates**: 4-stage notification flow
+- **Points Alerts**: Notification when loyalty points earned
+- **Review Confirmation**: Thank you message after review submission
+- **Browser Native**: Uses Web Notifications API
+- **Click to Focus**: Clicking notification brings app to front
 
-### Frontend
-- **React 18** - UI library
-- **Vite 4** - Build tool and dev server
-- **React Router 6** - Client-side routing
-- **Lucide React** - Modern icon library
-- **CSS3** - Custom styling
+### 🎨 **UI/UX Excellence**
+- **Responsive Design**: Mobile-first, works on all devices
+- **Smooth Animations**: Fade-in, slide-in, hover effects
+- **Loading States**: Clear feedback during async operations
+- **Error Handling**: Graceful degradation and fallbacks
+- **Toast Notifications**: Success/error messages
+- **Featured Items**: Showcase popular drinks on home page
 
-### Backend
-- **Express.js** - Web server framework
-- **SQLite3** - Lightweight database
-- **bcryptjs** - Password hashing
-- **jsonwebtoken** - JWT authentication
-- **CORS** - Cross-origin resource sharing
+### 🔐 **Security & Authentication**
+- **JWT Tokens**: Secure session management
+- **Password Hashing**: bcrypt encryption
+- **Protected Routes**: User-specific data access
+- **Session Persistence**: Stay logged in across refreshes
 
-## Getting Started
+---
+
+## 🏗️ Tech Stack
+
+### **Frontend**
+| Technology | Purpose | Version |
+|------------|---------|---------|
+| React | UI Framework | 18.3.1 |
+| React Router | Navigation | 6.28.0 |
+| Context API | State Management | Built-in |
+| Lucide React | Icons | 0.454.0 |
+| PropTypes | Type Validation | 15.8.1 |
+| Vite | Build Tool | 5.4.10 |
+
+### **Backend**
+| Technology | Purpose | Version |
+|------------|---------|---------|
+| Node.js | Runtime | 14+ |
+| Express.js | Web Framework | 4.21.1 |
+| SQLite3 | Database | 5.1.7 |
+| JWT | Authentication | 9.0.2 |
+| bcryptjs | Password Hashing | 2.4.3 |
+| CORS | Cross-Origin | 2.8.5 |
+
+### **Development**
+- Concurrently - Run multiple servers
+- ESLint - Code linting
+- Git - Version control
+
+---
+
+## 📊 Project Statistics
+
+- **Total Files**: 30+
+- **Components**: 15+
+- **Pages**: 7
+- **API Endpoints**: 8
+- **Menu Items**: 42
+- **Database Tables**: 2
+- **Lines of Code**: 5000+
+- **Features**: 15+
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js (v14 or higher)
-- npm or yarn
+```bash
+Node.js >= 14.0.0
+npm >= 6.0.0
+```
 
-### Installation
+### Quick Start
 
-1. Install dependencies:
+1. **Clone the repository**
+```bash
+git clone https://github.com/yourusername/BarterCafe.git
+cd BarterCafe
+```
+
+2. **Install dependencies**
 ```bash
 npm install
 ```
 
-### Running the Application
-
-#### Option 1: Run both servers together (Recommended)
+3. **Start both servers**
 ```bash
 npm run dev:full
 ```
 
-#### Option 2: Run servers separately
+4. **Open your browser**
+```
+Frontend: http://localhost:5173
+Backend:  http://localhost:3001
+```
 
-Terminal 1 - Backend Server:
+### Alternative: Run Servers Separately
+
+**Terminal 1 - Backend:**
 ```bash
 npm run server
 ```
 
-Terminal 2 - Frontend Dev Server:
+**Terminal 2 - Frontend:**
 ```bash
 npm run dev
 ```
 
-### Access the Application
+---
 
-- **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:3001
-
-## API Endpoints
-
-### Authentication
-- `POST /api/register` - Register new user
-- `POST /api/login` - Login user
-- `GET /api/profile` - Get user profile (protected)
-- `GET /api/health` - Health check
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 BarterCafe/
-├── server/
-│   ├── server.js          # Express server
-│   └── database.sqlite    # SQLite database (auto-created)
+├── 📂 src/                          # Frontend source code
+│   ├── 📂 components/               # Reusable React components
+│   │   ├── AuthModal.jsx           # Login/Signup modal
+│   │   ├── CartDrawer.jsx          # Shopping cart drawer
+│   │   ├── CustomizeDrinkModal.jsx # Drink customization
+│   │   ├── Navigation.jsx          # Top navigation bar
+│   │   ├── ReviewsModal.jsx        # Review submission form
+│   │   ├── ReviewsList.jsx         # Display reviews
+│   │   └── Toast.jsx               # Notification toasts
+│   ├── 📂 context/                  # React Context providers
+│   │   └── CartContext.jsx         # Global cart state
+│   ├── 📂 pages/                    # Page components
+│   │   ├── Home.jsx                # Landing page
+│   │   ├── Menu.jsx                # Menu browsing
+│   │   ├── About.jsx               # About us
+│   │   ├── Contact.jsx             # Contact info
+│   │   ├── Directions.jsx          # Location
+│   │   ├── Checkout.jsx            # Order checkout
+│   │   └── Orders.jsx              # Order history
+│   ├── 📂 utils/                    # Utility functions
+│   │   └── notifications.js        # Push notifications
+│   ├── App.jsx                     # Root component
+│   ├── App.css                     # Global styles
+│   └── main.jsx                    # Entry point
+├── 📂 server/                       # Backend source code
+│   ├── server.js                   # Express server
+│   └── database.sqlite             # SQLite database
+├── 📂 public/                       # Static assets
+├── 📄 CHANGELOG.md                 # Detailed change history
+├── 📄 COMPONENT_HIERARCHY.md       # Component architecture
+├── 📄 TESTING_GUIDE.md             # Testing procedures
+├── 📄 JSON_SCHEMAS.md              # Data structure docs
+├── 📄 API_DOCUMENTATION.md         # API reference
+├── 📄 FEATURES.md                  # Feature documentation
+├── 📄 package.json                 # Dependencies
+└── 📄 README.md                    # This file
+```
+
+---
+
+## 🎮 Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start frontend dev server (Vite) |
+| `npm run server` | Start backend server (Node.js) |
+| `npm run dev:full` | Start both servers concurrently |
+| `npm run build` | Build frontend for production |
+| `npm run preview` | Preview production build |
+| `npm run lint` | Run ESLint |
+
+---
+
+## 📖 Documentation
+
+Comprehensive documentation is available in the following files:
+
+- **[CHANGELOG.md](CHANGELOG.md)** - Detailed update history with verification steps
+- **[COMPONENT_HIERARCHY.md](COMPONENT_HIERARCHY.md)** - Component architecture and data flow
+- **[TESTING_GUIDE.md](TESTING_GUIDE.md)** - Complete testing procedures and Q&A prep
+- **[JSON_SCHEMAS.md](JSON_SCHEMAS.md)** - All data structures and schemas
+- **[API_DOCUMENTATION.md](API_DOCUMENTATION.md)** - Backend API reference
+- **[FEATURES.md](FEATURES.md)** - Feature list and usage instructions
+- **[IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md)** - Implementation summary
+
+---
+
+## 🔌 API Endpoints
+
+### Authentication
+- `POST /api/register` - Create new user account
+- `POST /api/login` - Authenticate user
+- `GET /api/profile` - Get user profile (protected)
+
+### Orders
+- `POST /api/orders` - Create new order
+- `GET /api/orders/user/:userId` - Get user's orders
+- `GET /api/orders/:orderId` - Get single order
+- `PATCH /api/orders/:orderId/status` - Update order status
+
+### Loyalty
+- `GET /api/loyalty/:userId` - Get loyalty points and total orders
 ├── src/
 │   ├── components/
 │   │   ├── Navigation.jsx # Navigation bar with auth

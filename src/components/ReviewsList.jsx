@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import PropTypes from 'prop-types'
 import { Star, ThumbsUp, User } from 'lucide-react'
 
 const ReviewsList = ({ drinkId, reviews }) => {
@@ -128,6 +129,20 @@ const ReviewsList = ({ drinkId, reviews }) => {
       </div>
     </div>
   )
+}
+
+ReviewsList.propTypes = {
+  drinkId: PropTypes.number.isRequired,
+  reviews: PropTypes.arrayOf(PropTypes.shape({
+    drinkId: PropTypes.number.isRequired,
+    drinkName: PropTypes.string.isRequired,
+    rating: PropTypes.number.isRequired,
+    text: PropTypes.string.isRequired,
+    reviewer: PropTypes.string.isRequired,
+    photo: PropTypes.string,
+    date: PropTypes.string.isRequired,
+    helpful: PropTypes.number
+  })).isRequired
 }
 
 export default ReviewsList
